@@ -32,7 +32,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${AUTH_SERVER:http://localhost:8080}/realms/PolarBookshop
+          issuer-uri: http://localhost:8080/realms/PolarBookshop
   config:
     import: "optional:configserver:"
   cloud:
