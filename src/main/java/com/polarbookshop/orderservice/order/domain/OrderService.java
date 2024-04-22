@@ -45,8 +45,8 @@ public class OrderService {
         log.info("Result of sending data for order with id {}: {}", order.id(), result);
     }
 
-    public Flux<Order> getAllOrders() {
-        return orderRepository.findAll();
+    public Flux<Order> getAllOrders(String userId) {
+        return orderRepository.findAllByCreatedBy(userId);
     }
 
     @Transactional
@@ -84,7 +84,9 @@ public class OrderService {
             existingOrder.quantity(),
             OrderStatus.DISPATCHED,
             existingOrder.createdDate(),
+            existingOrder.createdBy(),
             existingOrder.lastModifiedDate(),
+            existingOrder.lastModifiedBy(),
             existingOrder.version()
         );
     }
