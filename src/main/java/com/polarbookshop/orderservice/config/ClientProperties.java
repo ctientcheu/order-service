@@ -1,9 +1,8 @@
 package com.polarbookshop.orderservice.config;
 
 import jakarta.validation.constraints.NotNull;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
 import java.net.URI;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * @author clement.tientcheu@cerebrau.com
@@ -11,7 +10,4 @@ import java.net.URI;
  * @org Cerebrau
  */
 @ConfigurationProperties(prefix = "polar")
-public record ClientProperties(
-    @NotNull
-    URI catalogServiceUri
-) {}
+public record ClientProperties(@NotNull URI catalogServiceUri) {}

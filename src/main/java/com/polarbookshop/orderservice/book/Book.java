@@ -5,9 +5,4 @@ package com.polarbookshop.orderservice.book;
  * @project order-service
  * @org Cerebrau
  */
-public record Book(
-    String isbn,
-    String title,
-    String author,
-    Double price
-) {}
+public record Book(String isbn, String title, String author, Double price) {}

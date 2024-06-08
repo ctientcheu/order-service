@@ -6,7 +6,7 @@ package com.polarbookshop.orderservice.order.domain;
  * @org Cerebrau
  */
 public enum OrderStatus {
-    ACCEPTED,
-    REJECTED,
-    DISPATCHED
+  ACCEPTED,
+  REJECTED,
+  DISPATCHED
 }

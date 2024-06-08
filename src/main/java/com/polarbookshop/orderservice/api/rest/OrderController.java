@@ -19,22 +19,22 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("orders")
 public class OrderController {
-    private static final Logger log = LoggerFactory.getLogger(OrderController.class);
-    private final OrderService orderService;
+  private static final Logger log = LoggerFactory.getLogger(OrderController.class);
+  private final OrderService orderService;
 
-    public OrderController(OrderService orderService) {
-        this.orderService = orderService;
-    }
+  public OrderController(OrderService orderService) {
+    this.orderService = orderService;
+  }
 
-    @GetMapping
-    public Flux<Order> getOrders(@AuthenticationPrincipal Jwt jwt) {
-        log.info("Fetching orders for user {}", jwt.getSubject());
-        return orderService.getAllOrders(jwt.getSubject());
-    }
+  @GetMapping
+  public Flux<Order> getOrders(@AuthenticationPrincipal Jwt jwt) {
+    log.info("Fetching orders for user {}", jwt.getSubject());
+    return orderService.getAllOrders(jwt.getSubject());
+  }
 
-    @PostMapping
-    public Mono<Order> submitOrder(@RequestBody @Valid OrderRequest orderRequest) {
-        log.info("Submitting order {}", orderRequest);
-        return orderService.submitOrder(orderRequest.isbn(), orderRequest.quantity());
-    }
+  @PostMapping
+  public Mono<Order> submitOrder(@RequestBody @Valid OrderRequest orderRequest) {
+    log.info("Submitting order {}", orderRequest);
+    return orderService.submitOrder(orderRequest.isbn(), orderRequest.quantity());
+  }
 }

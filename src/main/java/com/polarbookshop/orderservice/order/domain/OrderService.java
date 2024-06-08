@@ -20,74 +20,83 @@ import reactor.core.publisher.Mono;
  */
 @Service
 public class OrderService {
-    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+  private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
-    private final OrderRepository orderRepository;
-    private final BookClient bookClient;
-    private final StreamBridge streamBridge;
-    private final ResourceUrlProvider resourceUrlProvider;
+  private final OrderRepository orderRepository;
+  private final BookClient bookClient;
+  private final StreamBridge streamBridge;
+  private final ResourceUrlProvider resourceUrlProvider;
 
-    public OrderService(OrderRepository orderRepository, BookClient bookClient, StreamBridge streamBridge, ResourceUrlProvider resourceUrlProvider) {
-        this.orderRepository = orderRepository;
-        this.bookClient = bookClient;
-        this.streamBridge = streamBridge;
-        this.resourceUrlProvider = resourceUrlProvider;
+  public OrderService(
+      OrderRepository orderRepository,
+      BookClient bookClient,
+      StreamBridge streamBridge,
+      ResourceUrlProvider resourceUrlProvider) {
+    this.orderRepository = orderRepository;
+    this.bookClient = bookClient;
+    this.streamBridge = streamBridge;
+    this.resourceUrlProvider = resourceUrlProvider;
+  }
+
+  public static Order buildAcceptedOrder(Book book, int quantity) {
+    return Order.of(
+        book.isbn(),
+        book.title() + " - " + book.author(),
+        book.price(),
+        quantity,
+        OrderStatus.ACCEPTED);
+  }
+
+  public static Order buildRejectedOrder(String isbn, int quantity) {
+    return Order.of(isbn, null, null, quantity, OrderStatus.REJECTED);
+  }
+
+  private void publishOrderAcceptedEvent(Order order) {
+    if (!order.status().equals(OrderStatus.ACCEPTED)) {
+      return;
     }
+    var orderAcceptedMessage = new OrderAcceptedMessage(order.id());
+    log.info("Publishing order accepted event with id: {}", order.id());
 
-    private void publishOrderAcceptedEvent(Order order) {
-        if (!order.status().equals(OrderStatus.ACCEPTED)) {
-            return;
-        }
-        var orderAcceptedMessage = new OrderAcceptedMessage(order.id());
-        log.info("Publishing order accepted event with id: {}", order.id());
+    var result = streamBridge.send("acceptOrder-out-0", orderAcceptedMessage);
+    log.info("Result of sending data for order with id {}: {}", order.id(), result);
+  }
 
-        var result = streamBridge.send("acceptOrder-out-0", orderAcceptedMessage);
-        log.info("Result of sending data for order with id {}: {}", order.id(), result);
-    }
+  public Flux<Order> getAllOrders(String userId) {
+    return orderRepository.findAllByCreatedBy(userId);
+  }
 
-    public Flux<Order> getAllOrders(String userId) {
-        return orderRepository.findAllByCreatedBy(userId);
-    }
+  @Transactional
+  public Mono<Order> submitOrder(String isbn, int quantity) {
+    return bookClient
+        .getBookByIsbn(isbn)
+        .map(book -> buildAcceptedOrder(book, quantity))
+        .defaultIfEmpty(buildRejectedOrder(isbn, quantity))
+        .flatMap(orderRepository::save)
+        .doOnNext(this::publishOrderAcceptedEvent);
+  }
 
-    @Transactional
-    public Mono<Order> submitOrder(String isbn, int quantity) {
-        return bookClient.getBookByIsbn(isbn)
-            .map(book -> buildAcceptedOrder(book, quantity))
-            .defaultIfEmpty(buildRejectedOrder(isbn, quantity))
-            .flatMap(orderRepository::save)
-            .doOnNext(this::publishOrderAcceptedEvent);
-    }
-
-    public static Order buildAcceptedOrder(Book book, int quantity) {
-        return Order.of(book.isbn(), book.title() + " - " + book.author(), book.price(), quantity, OrderStatus.ACCEPTED);
-    }
-
-    public static Order buildRejectedOrder(String isbn, int quantity) {
-        return Order.of(isbn, null, null, quantity, OrderStatus.REJECTED);
-    }
-
-    public Flux<Order> consumeOrderDispatchedEvent(Flux<OrderDispatchedMessage> flux) {
-        return flux
-            .flatMap(message -> orderRepository
+  public Flux<Order> consumeOrderDispatchedEvent(Flux<OrderDispatchedMessage> flux) {
+    return flux.flatMap(
+        message ->
+            orderRepository
                 .findById(message.orderId())
                 .map(this::buildDispatchedOrder)
-                .flatMap(orderRepository::save)
-            );
-    }
+                .flatMap(orderRepository::save));
+  }
 
-    private Order buildDispatchedOrder(Order existingOrder) {
-        return new Order(
-            existingOrder.id(),
-            existingOrder.bookIsbn(),
-            existingOrder.bookName(),
-            existingOrder.bookPrice(),
-            existingOrder.quantity(),
-            OrderStatus.DISPATCHED,
-            existingOrder.createdDate(),
-            existingOrder.createdBy(),
-            existingOrder.lastModifiedDate(),
-            existingOrder.lastModifiedBy(),
-            existingOrder.version()
-        );
-    }
+  private Order buildDispatchedOrder(Order existingOrder) {
+    return new Order(
+        existingOrder.id(),
+        existingOrder.bookIsbn(),
+        existingOrder.bookName(),
+        existingOrder.bookPrice(),
+        existingOrder.quantity(),
+        OrderStatus.DISPATCHED,
+        existingOrder.createdDate(),
+        existingOrder.createdBy(),
+        existingOrder.lastModifiedDate(),
+        existingOrder.lastModifiedBy(),
+        existingOrder.version());
+  }
 }

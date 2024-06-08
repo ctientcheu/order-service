@@ -5,6 +5,4 @@ package com.polarbookshop.orderservice.order.event;
  * @project order-service
  * @org Cerebrau
  */
-public record OrderAcceptedMessage(
-   Long orderId
-) {}
+public record OrderAcceptedMessage(Long orderId) {}

@@ -12,5 +12,5 @@ import reactor.core.publisher.Flux;
 @Repository
 public interface OrderRepository extends ReactiveCrudRepository<Order, Long> {
 
-    public Flux<Order> findAllByCreatedBy(String createdBy);
+  public Flux<Order> findAllByCreatedBy(String createdBy);
 }
