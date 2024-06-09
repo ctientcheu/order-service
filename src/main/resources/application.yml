@@ -34,7 +34,7 @@ spring:
         jwt:
           issuer-uri: http://localhost:8080/realms/PolarBookshop
   config:
-    import: "optional:configserver:"
+    import: "" # disable spring cloud config import
   cloud:
     function:
       definition: dispatchOrder
@@ -60,6 +60,7 @@ spring:
         initial-interval: 1000
         max-interval: 5000
         multiplier: 1.2
+      enabled: false # disable spring cloud config client
 
 polar:
   catalog-service-uri: "http://localhost:9001"
